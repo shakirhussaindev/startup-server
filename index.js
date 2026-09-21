@@ -18,11 +18,27 @@ const client = new MongoClient(process.env.MONGODB_URI, {
   },
 });
 
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+
 async function run() {
   try {
     await client.connect();
 
     // Database and Database Collections
+    const db = client.db(process.env.STARTUP_DB);
+    const opportunitiesCollection = db.collection('opportunities')
+
+
+
+    app.post("/api/opportunities", async (req,res) =>{
+      const opportunity = req.body
+      const opportunityDate = {...opportunity, createdAt: new Date()}
+      const result = await opportunitiesCollection.insertOne(opportunityDate)
+      res.send(result)
+    });
+
 
     // Verify MongoDB connection
     await client.db("admin").command({ ping: 1 });
@@ -36,9 +52,7 @@ async function run() {
 run().catch(console.dir);
 
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
