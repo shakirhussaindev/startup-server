@@ -29,14 +29,41 @@ async function run() {
     // Database and Database Collections
     const db = client.db(process.env.STARTUP_DB);
     const opportunitiesCollection = db.collection('opportunities')
+    const startupCollection = db.collection("startup")
 
 
-
+    // Opportunities related api
     app.post("/api/opportunities", async (req,res) =>{
       const opportunity = req.body
-      const opportunityDate = {...opportunity, createdAt: new Date()}
-      const result = await opportunitiesCollection.insertOne(opportunityDate)
+      const result = await opportunitiesCollection.insertOne(opportunity)
       res.send(result)
+    });
+
+    app.get("/api/opportunities", async (req, res) =>{
+      const query = {}
+      if (req.query.startupId) {
+        query.startupId = req.query.startupId;
+      }
+      const cursor = opportunitiesCollection.find(query)
+      const result = await cursor.toArray()
+      res.send(result)
+    });
+
+
+    // Startup related api
+    app.post("/api/startup", async(req,res)=>{
+      const startup = req.body
+      const result = await startupCollection.insertOne(startup)
+      res.send(result)
+    })
+
+    app.get("/api/my/startup", async (req, res) => {
+      const query = {};
+      if (req.query.founderId) {
+        query.founderId = req.query.founderId;
+      }
+      const result = await startupCollection.findOne(query);
+      res.send(result || {});
     });
 
 
