@@ -30,30 +30,57 @@ async function run() {
     const db = client.db(process.env.STARTUP_DB);
     const opportunitiesCollection = db.collection('opportunities')
     const startupCollection = db.collection("startup")
+    const userCollection = db.collection('user')
 
+
+    app.get('/api/users', async(req,res)=>{
+      const cursor = userCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
 
     // Opportunities related api
     app.post("/api/opportunities", async (req,res) =>{
       const opportunity = req.body
-      const result = await opportunitiesCollection.insertOne(opportunity)
+      const newOpportunity = {...opportunity, createdAt: new Date()}
+      const result = await opportunitiesCollection.insertOne(newOpportunity)
       res.send(result)
     });
 
-    app.get("/api/opportunities", async (req, res) =>{
-      const query = {}
+    app.get("/api/startup/opportunities", async (req, res) => {
+      const query = {};
       if (req.query.startupId) {
         query.startupId = req.query.startupId;
       }
-      const cursor = opportunitiesCollection.find(query)
+      const cursor = opportunitiesCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    
+    app.get("/api/opportunities", async (req, res) =>{
+      
+      const cursor = opportunitiesCollection.find()
       const result = await cursor.toArray()
       res.send(result)
     });
 
+    app.get('/api/opportunities/:id', async(req,res)=>{
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
+      const result = await opportunitiesCollection.findOne(query)
+      res.send(result)
+    })
 
     // Startup related api
+    app.get('/api/startup', async(req,res) =>{
+      const cursor = startupCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
     app.post("/api/startup", async(req,res)=>{
       const startup = req.body
-      const result = await startupCollection.insertOne(startup)
+      const newStartup = { ...startup, createdAt: new Date() };
+      const result = await startupCollection.insertOne(newStartup)
       res.send(result)
     })
 
