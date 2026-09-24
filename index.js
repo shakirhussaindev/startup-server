@@ -31,6 +31,7 @@ async function run() {
     const opportunitiesCollection = db.collection('opportunities')
     const startupCollection = db.collection("startup")
     const userCollection = db.collection('user')
+    const applicationCollection = db.collection('applications')
 
 
     app.get('/api/users', async(req,res)=>{
@@ -68,6 +69,14 @@ async function run() {
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
       const result = await opportunitiesCollection.findOne(query)
+      res.send(result)
+    })
+
+    // Application related apis
+    app.post('/api/applications', async(req,res)=>{
+      const application = req.body
+      const applyingTime = {...application, createdAt: new Date()}
+      const result = await applicationCollection.insertOne(applyingTime)
       res.send(result)
     })
 
