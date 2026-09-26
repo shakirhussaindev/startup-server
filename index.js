@@ -32,6 +32,8 @@ async function run() {
     const startupCollection = db.collection("startup")
     const userCollection = db.collection('user')
     const applicationCollection = db.collection('applications')
+    const planCollection = db.collection("plans")
+    const subscriptionCollection = db.collection('subscriptions')
 
 
     app.get('/api/users', async(req,res)=>{
@@ -73,6 +75,22 @@ async function run() {
     })
 
     // Application related apis
+
+    app.get('/api/applications', async (req, res)=>{
+      const query = {}
+      if(req.query.applicantId){
+        query.applicantId = req.query.applicantId
+      }
+
+      if(req.query.opportunityId){
+        query.opportunityId = req.query.opportunityId
+      }
+
+      const cursor = applicationCollection.find(query)
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+
     app.post('/api/applications', async(req,res)=>{
       const application = req.body
       const applyingTime = {...application, createdAt: new Date()}
@@ -101,6 +119,35 @@ async function run() {
       const result = await startupCollection.findOne(query);
       res.send(result || {});
     });
+
+    // Plans
+    app.get('/api/plans', async (req, res) => {
+      const query = {}
+      if(req.query.planId){
+        query.planId = req.query.planId
+      }
+      const plan = await planCollection.findOne(query)
+      res.send(plan)
+    })
+
+
+    // Subscriptions
+    app.post('/api/subscriptions', async (req, res)=> {
+      const data = req.body
+      const subsInfo = {...data, createdAt: new Date()}
+      const result = await subscriptionCollection.insertOne(subsInfo)
+      
+      // update user plan info
+      const filter = {email: data.email}
+      const updateDocument = {
+        $set: {
+          plan: data.planId
+        }
+      }
+
+      const updateResult = await userCollection.updateOne(filter, updateDocument)
+      res.send(updateResult)
+    })
 
 
     // Verify MongoDB connection
