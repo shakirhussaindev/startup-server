@@ -99,7 +99,7 @@ async function run() {
     })
 
     // Startup related api
-    app.get('/api/startup', async(req,res) =>{
+    app.get('/api/startups', async(req,res) =>{
       const cursor = startupCollection.find()
       const result = await cursor.toArray()
       res.send(result)
@@ -119,6 +119,19 @@ async function run() {
       const result = await startupCollection.findOne(query);
       res.send(result || {});
     });
+
+    app.patch('/api/startup/:id', async (req,res)=>{
+      const id = req.params.id
+      const updatedStartup = req.body
+      const filter = {_id: new ObjectId(id)}
+      const updateDoc = {
+        $set: {
+          status: updatedStartup.status
+        }
+      }
+      const result = await startupCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
 
     // Plans
     app.get('/api/plans', async (req, res) => {
