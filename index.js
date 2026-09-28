@@ -18,6 +18,17 @@ const client = new MongoClient(process.env.MONGODB_URI, {
   },
 });
 
+
+const logged = (req,res,next)=>{
+  const log = req.params
+  console.log("logger logged", log)
+  next()
+}
+
+
+
+
+
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
@@ -34,6 +45,63 @@ async function run() {
     const applicationCollection = db.collection('applications')
     const planCollection = db.collection("plans")
     const subscriptionCollection = db.collection('subscriptions')
+    const sessionCollection = db.collection('session')
+
+
+    //jwt verification related
+    const verifyToken = async (req, res, next) => {
+      console.log("headers", req.headers);
+      const authHeader = req.headers?.authorization;
+      if (!authHeader) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      if (!token) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+
+      const query = {token: token}
+      const session = await sessionCollection.findOne(query)
+
+      if (!session) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+
+      const userId = session.userId
+      const userQuery = { _id: userId}
+
+      const user = await userCollection.findOne(userQuery)
+      if (!user) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+
+      req.user = user
+
+      next();
+    };
+
+    const verifyCollaborator = async (req, res, next) => {
+      if (req.user?.role !== "collaborator") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+
+    const verifyFounder = async (req,res,next) => {
+      if(req.user?.role !== 'founder'){
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next()
+    }
+
+    const verifyAdmin = async (req,res,next) => {
+      if(req.user?.role !== "admin"){
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next()
+    }
 
 
     app.get('/api/users', async(req,res)=>{
@@ -76,14 +144,21 @@ async function run() {
 
     // Application related apis
 
-    app.get('/api/applications', async (req, res)=>{
+    app.get('/api/applications', verifyToken, verifyCollaborator, async (req, res)=>{
       const query = {}
       if(req.query.applicantId){
         query.applicantId = req.query.applicantId
+
+        console.log(req.user, req.query.applicantId);
+        if(req.user._id.toString() !== req.query.applicantId){
+          return res.status(403).send({ message: "forbidden access" });
+        }
       }
 
       if(req.query.opportunityId){
         query.opportunityId = req.query.opportunityId
+
+      
       }
 
       const cursor = applicationCollection.find(query)
@@ -99,7 +174,7 @@ async function run() {
     })
 
     // Startup related api
-    app.get('/api/startups', async(req,res) =>{
+    app.get('/api/startups', verifyToken, async(req,res) =>{
       const cursor = startupCollection.find()
       const result = await cursor.toArray()
       res.send(result)
@@ -120,7 +195,7 @@ async function run() {
       res.send(result || {});
     });
 
-    app.patch('/api/startup/:id', async (req,res)=>{
+    app.patch('/api/startup/:id', verifyToken, verifyAdmin, async (req,res)=>{
       const id = req.params.id
       const updatedStartup = req.body
       const filter = {_id: new ObjectId(id)}
