@@ -104,11 +104,11 @@ async function run() {
     }
 
 
-    app.get('/api/users', async(req,res)=>{
-      const cursor = userCollection.find()
-      const result = await cursor.toArray()
-      res.send(result)
-    })
+    // app.get('/api/users', async(req,res)=>{
+    //   const cursor = userCollection.find()
+    //   const result = await cursor.toArray()
+    //   res.send(result)
+    // })
 
     // Opportunities related api
     app.post("/api/opportunities", async (req,res) =>{
@@ -174,11 +174,19 @@ async function run() {
     })
 
     // Startup related api
-    app.get('/api/startups', verifyToken, async(req,res) =>{
+    app.get('/api/startups', async(req,res) =>{
       const cursor = startupCollection.find()
       const result = await cursor.toArray()
       res.send(result)
     })
+    
+    app.get('/api/startups/:id', async(req,res)=>{
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
+      const result = await startupCollection.findOne(query)
+      res.send(result)
+    })
+    
     app.post("/api/startup", async(req,res)=>{
       const startup = req.body
       const newStartup = { ...startup, createdAt: new Date() };
