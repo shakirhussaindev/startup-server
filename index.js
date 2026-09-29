@@ -109,6 +109,7 @@ async function run() {
     // })
 
     // Opportunities related api
+
     app.post("/api/opportunities", async (req, res) => {
       const opportunity = req.body;
       const newOpportunity = { ...opportunity, createdAt: new Date() };
@@ -117,7 +118,10 @@ async function run() {
     });
 
     app.get("/api/opportunities/featured", async (req, res) => {
-      const cursor = opportunitiesCollection.find().sort({ createdAt: -1 }).limit(6);
+      const cursor = opportunitiesCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(6);
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -133,7 +137,21 @@ async function run() {
     });
 
     app.get("/api/opportunities", async (req, res) => {
-      const cursor = opportunitiesCollection.find();
+      const query = {};
+
+      if (req.query.search) {
+        query.$or = [
+          { title: { $regex: req.query.search, $options: "i" } },
+          { skills: { $regex: req.query.search, $options: "i" } },
+        ];
+      }
+      if (req.query.workType) {
+        query.workType = req.query.workType;
+      }
+      if (req.query.StartupIndustry) {
+        query.StartupIndustry = req.query.StartupIndustry;
+      }
+      const cursor = opportunitiesCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -144,6 +162,7 @@ async function run() {
       const result = await opportunitiesCollection.findOne(query);
       res.send(result);
     });
+    
 
     // Application related apis
 
@@ -187,7 +206,7 @@ async function run() {
     });
 
     app.get("/api/startups/featured", async (req, res) => {
-      const cursor = startupCollection.find().sort({createdAt: -1}).limit(6);
+      const cursor = startupCollection.find().sort({ createdAt: -1 }).limit(6);
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -232,7 +251,6 @@ async function run() {
         res.send(result);
       },
     );
-
 
     // Plans
     app.get("/api/plans", async (req, res) => {
