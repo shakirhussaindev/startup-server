@@ -102,11 +102,22 @@ async function run() {
       next();
     };
 
-    // app.get('/api/users', async(req,res)=>{
-    //   const cursor = userCollection.find()
-    //   const result = await cursor.toArray()
-    //   res.send(result)
-    // })
+    // users related
+    app.get("/api/user/:id", verifyToken, async (req, res) => {
+      const { id } = req.params;
+      const result = await userCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    app.patch("/api/users/:id", verifyToken, async (req, res) => {
+      const { id } = req.params;
+      const updateData = req.body;
+      const result = await userCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { ...updateData, updatedAt: new Date() } },
+      );
+      res.json({ modifiedCount: result.modifiedCount });
+    });
 
     // Opportunities related api
 
@@ -152,19 +163,20 @@ async function run() {
         query.StartupIndustry = req.query.StartupIndustry;
       }
 
-
       // Pagination related work
-      if(req.query.page){
+      if (req.query.page) {
         const page = req.query.page;
         const perPage = req.query.perPage || 9;
-        const skipItems = (page-1) * perPage
+        const skipItems = (page - 1) * perPage;
 
-        const total = await opportunitiesCollection.countDocuments(query)
-        const cursor = opportunitiesCollection.find(query).skip(skipItems).limit(perPage);
+        const total = await opportunitiesCollection.countDocuments(query);
+        const cursor = opportunitiesCollection
+          .find(query)
+          .skip(skipItems)
+          .limit(perPage);
         const opportunities = await cursor.toArray();
-        return res.send({opportunities,total});
+        return res.send({ opportunities, total });
       }
-
 
       const cursor = opportunitiesCollection.find(query);
       const result = await cursor.toArray();
@@ -177,7 +189,6 @@ async function run() {
       const result = await opportunitiesCollection.findOne(query);
       res.send(result);
     });
-    
 
     // Application related apis
 
