@@ -151,6 +151,21 @@ async function run() {
       if (req.query.StartupIndustry) {
         query.StartupIndustry = req.query.StartupIndustry;
       }
+
+
+      // Pagination related work
+      if(req.query.page){
+        const page = req.query.page;
+        const perPage = req.query.perPage || 9;
+        const skipItems = (page-1) * perPage
+
+        const total = await opportunitiesCollection.countDocuments(query)
+        const cursor = opportunitiesCollection.find(query).skip(skipItems).limit(perPage);
+        const opportunities = await cursor.toArray();
+        return res.send({opportunities,total});
+      }
+
+
       const cursor = opportunitiesCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
