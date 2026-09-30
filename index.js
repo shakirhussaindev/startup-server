@@ -103,6 +103,7 @@ async function run() {
     };
 
     // users related
+
     app.get("/api/user/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const result = await userCollection.findOne({ _id: new ObjectId(id) });
@@ -331,7 +332,13 @@ async function run() {
     });
 
     // Subscriptions
-    app.post("/api/subscriptions", async (req, res) => {
+    app.get("/api/subscriptions", verifyToken, verifyAdmin, async(req,res)=>{
+      const cursor = subscriptionCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    });
+
+    app.post("/api/subscriptions", verifyToken, async (req, res) => {
       const data = req.body;
       const subsInfo = { ...data, createdAt: new Date() };
       const result = await subscriptionCollection.insertOne(subsInfo);
