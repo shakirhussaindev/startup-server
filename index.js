@@ -183,12 +183,15 @@ async function run() {
       res.send(result);
     });
 
+
     app.get("/api/opportunities/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await opportunitiesCollection.findOne(query);
       res.send(result);
     });
+
+
 
     // Application related apis
 
@@ -201,7 +204,7 @@ async function run() {
         if (req.query.applicantId) {
           query.applicantId = req.query.applicantId;
 
-          console.log(req.user, req.query.applicantId);
+          // console.log(req.user, req.query.applicantId);
           if (req.user._id.toString() !== req.query.applicantId) {
             return res.status(403).send({ message: "forbidden access" });
           }
@@ -222,6 +225,31 @@ async function run() {
       const applyingTime = { ...application, createdAt: new Date() };
       const result = await applicationCollection.insertOne(applyingTime);
       res.send(result);
+    });
+
+
+    app.get("/api/founder/applications/:startupId",
+      verifyToken,async (req, res) => {
+          const { startupId } = req.params;
+          const query = { startupId: startupId };
+
+          const applications = await applicationCollection
+            .find(query).sort({ createdAt: -1 }).toArray();
+
+          res.status(200).json(applications);
+        
+      },
+    );
+
+    app.patch("/api/applications/:id", verifyToken, async(req,res)=>{
+      const id = req.params.id
+      const updateApplication = req.body
+      const filter = {_id: new ObjectId(id)}
+      const applicationStatus = {
+        $set: {status: updateApplication.status}
+      }
+      const result = await applicationCollection.updateOne(filter,applicationStatus)
+      res.send(result)
     });
 
     // Startup related api
@@ -277,6 +305,20 @@ async function run() {
         res.send(result);
       },
     );
+
+    app.patch('/api/my/startup/:id', verifyToken, verifyFounder, async(req,res)=>{
+      const id = req.params.id
+      const updatedData = req.body
+      const result = await startupCollection.updateOne({_id: new ObjectId(id)},{$set: updatedData})
+      res.send(result)
+    })
+
+    app.delete("/api/my/startup/:id", verifyToken, async(req,res)=>{
+      const {id} = req.params
+      const filter = {_id: new ObjectId(id)}
+      const result = await startupCollection.deleteOne(filter)
+      res.send(result)
+    });
 
     // Plans
     app.get("/api/plans", async (req, res) => {
